@@ -138,13 +138,15 @@ func (m *Manager) summarize() error {
 		m.memory.Summary = summary
 	}
 
-	// 重新估算上下文大小（仅用于显示，不删除消息）
-	m.memory.ContextSize = len(m.memory.Summary) / 4
+	// 重新估算总的上下文大小（包含所有消息，用于统计）
+	totalContextSize := len(m.memory.Summary) / 4
 	for _, msg := range m.memory.Messages {
-		m.memory.ContextSize += len(msg.Content) / 4
+		totalContextSize += len(msg.Content) / 4
 	}
+	m.memory.ContextSize = totalContextSize
 
-	fmt.Printf("✅ Summary generated. Total messages preserved: %d\n", len(m.memory.Messages))
+	fmt.Printf("✅ Summary generated. Messages preserved: %d, Total context: ~%d tokens (sent to LLM: summary + recent %d messages)\n", 
+		len(m.memory.Messages), totalContextSize, keepRecent)
 	return nil
 }
 

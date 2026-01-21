@@ -177,7 +177,9 @@ func runCLI(llmClient *llm.OpenAIClient, model string) {
 		// 使用流式响应
 		var fullResponse strings.Builder
 		tokens, err := llmClient.ChatStream(contextMessages, func(chunk string) error {
-			fmt.Print(chunk)
+			if _, err := fmt.Print(chunk); err != nil {
+				return fmt.Errorf("failed to print chunk: %w", err)
+			}
 			fullResponse.WriteString(chunk)
 			return nil
 		})
