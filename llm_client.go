@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 // LLMClient 定义LLM客户端接口
@@ -156,9 +157,14 @@ func (c *OpenAIClient) GenerateReflection(messages []Message, summary string) (*
 		}
 	}
 
+	timestamp := time.Now()
+	if len(messages) > 0 {
+		timestamp = messages[len(messages)-1].Timestamp
+	}
+	
 	return &Reflection{
 		Content:   content,
-		Timestamp: messages[len(messages)-1].Timestamp,
+		Timestamp: timestamp,
 		Importance: importance,
 	}, nil
 }

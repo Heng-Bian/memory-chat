@@ -233,7 +233,7 @@ func TestMemoryManager_HighImportanceReflections(t *testing.T) {
 	foundHighImportance := false
 	for _, msg := range messages {
 		if msg.Role == "system" && msg.Content != "" {
-			if len(msg.Content) > 0 && msg.Content[:4] == "重要反思" {
+			if len(msg.Content) >= 4 && msg.Content[:4] == "重要反思" {
 				foundHighImportance = true
 				// 应该只包含高重要性的反思
 				if len(msg.Content) < 10 {
