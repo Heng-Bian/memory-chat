@@ -17,7 +17,7 @@ const (
 	// SummarizationThreshold 触发摘要的阈值
 	SummarizationThreshold = 1500
 	// ReflectionInterval 反思间隔（消息数）
-	ReflectionInterval = 10
+	ReflectionInterval = 5
 )
 
 // MemoryManager 管理对话记忆
@@ -118,36 +118,35 @@ func (m *Manager) summarize() error {
 
 	fmt.Println("📝 Context window approaching limit, generating summary...")
 
-	// 计算需要摘要的消息数量（保留最近的一部分消息）
-	keepRecent := 5 // 保留最近5条消息
+	// 计算需要摘要的消息数量（保留最近的一部分消息用于上下文）
+	keepRecent := 5 // 保留最近5条消息用于上下文
 	if len(m.memory.Messages) <= keepRecent {
 		return nil
 	}
 
-	// 将旧消息进行摘要
+	// 将旧消息进行摘要，但不删除它们
 	messagesToSummarize := m.memory.Messages[:len(m.memory.Messages)-keepRecent]
 	summary, err := m.llmClient.Summarize(messagesToSummarize)
 	if err != nil {
 		return fmt.Errorf("generate summary: %w", err)
 	}
 
-	// 更新摘要和消息列表
+	// 更新摘要（保留所有消息）
 	if m.memory.Summary != "" {
 		m.memory.Summary = m.memory.Summary + "\n\n" + summary
 	} else {
 		m.memory.Summary = summary
 	}
 
-	// 只保留最近的消息
-	m.memory.Messages = m.memory.Messages[len(m.memory.Messages)-keepRecent:]
-	
-	// 重新估算上下文大小
-	m.memory.ContextSize = len(m.memory.Summary) / 4
+	// 重新估算总的上下文大小（包含所有消息，用于统计）
+	totalContextSize := len(m.memory.Summary) / 4
 	for _, msg := range m.memory.Messages {
-		m.memory.ContextSize += len(msg.Content) / 4
+		totalContextSize += len(msg.Content) / 4
 	}
+	m.memory.ContextSize = totalContextSize
 
-	fmt.Printf("✅ Summary generated. Context size reduced to ~%d tokens\n", m.memory.ContextSize)
+	fmt.Printf("✅ Summary generated. Messages preserved: %d, Total context: ~%d tokens (sent to LLM: summary + recent %d messages)\n", 
+		len(m.memory.Messages), totalContextSize, keepRecent)
 	return nil
 }
 
