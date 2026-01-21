@@ -31,13 +31,21 @@ func NewServer(llmClient llm.Client, memoryDir string) *Server {
 
 // getMemoryManager 获取或创建用户的记忆管理器
 func (s *Server) getMemoryManager(userID string) *memory.Manager {
+	// 验证 userID 防止路径遍历攻击
+	if strings.Contains(userID, "..") || strings.Contains(userID, "/") || strings.Contains(userID, "\\") {
+		userID = "invalid_user"
+	}
+	
 	if mm, exists := s.memoryManagers[userID]; exists {
 		return mm
 	}
 
 	storePath := fmt.Sprintf("%s/%s.yaml", s.memoryDir, userID)
 	mm := memory.NewManager(userID, s.llmClient, storePath)
-	mm.Load() // 忽略错误，如果加载失败则使用空记忆
+	if err := mm.Load(); err != nil {
+		// 记录加载错误但继续使用空记忆
+		fmt.Printf("Warning: failed to load memory for user %s: %v\n", userID, err)
+	}
 
 	s.memoryManagers[userID] = mm
 	return mm
@@ -140,7 +148,9 @@ func (s *Server) handleNormalResponse(w http.ResponseWriter, req ChatCompletionR
 	// 如果使用记忆管理器，保存助手响应
 	if mm != nil {
 		mm.AddMessage("assistant", response.Content)
-		mm.Save() // 忽略保存错误
+		if err := mm.Save(); err != nil {
+			fmt.Printf("Warning: failed to save memory: %v\n", err)
+		}
 	}
 
 	// 构造OpenAI格式的响应
@@ -238,7 +248,9 @@ func (s *Server) handleStreamResponse(w http.ResponseWriter, r *http.Request, re
 	// 如果使用记忆管理器，保存助手响应
 	if mm != nil {
 		mm.AddMessage("assistant", fullContent.String())
-		mm.Save() // 忽略保存错误
+		if err := mm.Save(); err != nil {
+			fmt.Printf("Warning: failed to save memory: %v\n", err)
+		}
 	}
 
 	// 发送结束信号
