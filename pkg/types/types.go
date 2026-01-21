@@ -4,16 +4,16 @@ import "time"
 
 // Message 表示单条消息
 type Message struct {
-	Role      string    `yaml:"role"`      // "user" 或 "assistant" 或 "system"
-	Content   string    `yaml:"content"`   // 消息内容
-	Timestamp time.Time `yaml:"timestamp"` // 时间戳
+	Role      string    `yaml:"role" json:"role"`           // "user" 或 "assistant" 或 "system"
+	Content   string    `yaml:"content" json:"content"`     // 消息内容
+	Timestamp time.Time `yaml:"timestamp" json:"timestamp"` // 时间戳
 }
 
 // Reflection 表示对对话的反思和观察
 type Reflection struct {
-	Content   string    `yaml:"content"`   // 反思内容
-	Timestamp time.Time `yaml:"timestamp"` // 时间戳
-	Importance int      `yaml:"importance"` // 重要性评分 (1-10)
+	Content    string    `yaml:"content"`    // 反思内容
+	Timestamp  time.Time `yaml:"timestamp"`  // 时间戳
+	Importance int       `yaml:"importance"` // 重要性评分 (1-10)
 }
 
 // ConversationMemory 表示完整的对话记忆
@@ -27,17 +27,17 @@ type ConversationMemory struct {
 
 // LLMRequest 表示发送给LLM的请求
 type LLMRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
-	MaxTokens int      `json:"max_tokens,omitempty"`
+	Model     string    `json:"model"`
+	Messages  []Message `json:"messages"`
+	MaxTokens int       `json:"max_tokens,omitempty"`
 }
 
 // LLMStreamRequest 表示流式请求
 type LLMStreamRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
-	MaxTokens int      `json:"max_tokens,omitempty"`
-	Stream   bool      `json:"stream"`
+	Model     string    `json:"model"`
+	Messages  []Message `json:"messages"`
+	MaxTokens int       `json:"max_tokens,omitempty"`
+	Stream    bool      `json:"stream"`
 }
 
 // LLMResponse 表示LLM返回的响应
