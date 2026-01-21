@@ -1,4 +1,4 @@
-package main
+package memory
 
 import (
 	"fmt"
@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
+	"github.com/Heng-Bian/memory-chat/pkg/types"
+	"github.com/Heng-Bian/memory-chat/pkg/llm"
 )
 
 const (
@@ -19,20 +21,20 @@ const (
 )
 
 // MemoryManager 管理对话记忆
-type MemoryManager struct {
-	memory    *ConversationMemory
-	llmClient LLMClient
+type Manager struct {
+	memory    *types.ConversationMemory
+	llmClient llm.Client
 	storePath string
 }
 
-// NewMemoryManager 创建新的记忆管理器
-func NewMemoryManager(userID string, llmClient LLMClient, storePath string) *MemoryManager {
-	return &MemoryManager{
-		memory: &ConversationMemory{
+// NewManager 创建新的记忆管理器
+func NewManager(userID string, llmClient llm.Client, storePath string) *Manager {
+	return &Manager{
+		memory: &types.ConversationMemory{
 			UserID:      userID,
-			Messages:    []Message{},
+			Messages:    []types.Message{},
 			Summary:     "",
-			Reflections: []Reflection{},
+			Reflections: []types.Reflection{},
 			ContextSize: 0,
 		},
 		llmClient: llmClient,
@@ -41,7 +43,7 @@ func NewMemoryManager(userID string, llmClient LLMClient, storePath string) *Mem
 }
 
 // Load 从YAML文件加载记忆
-func (m *MemoryManager) Load() error {
+func (m *Manager) Load() error {
 	data, err := os.ReadFile(m.storePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -58,7 +60,7 @@ func (m *MemoryManager) Load() error {
 }
 
 // Save 保存记忆到YAML文件
-func (m *MemoryManager) Save() error {
+func (m *Manager) Save() error {
 	// 确保目录存在
 	dir := filepath.Dir(m.storePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -78,8 +80,8 @@ func (m *MemoryManager) Save() error {
 }
 
 // AddMessage 添加消息到记忆
-func (m *MemoryManager) AddMessage(role, content string) error {
-	msg := Message{
+func (m *Manager) AddMessage(role, content string) error {
+	msg := types.Message{
 		Role:      role,
 		Content:   content,
 		Timestamp: time.Now(),
@@ -109,7 +111,7 @@ func (m *MemoryManager) AddMessage(role, content string) error {
 }
 
 // summarize 对历史对话进行摘要
-func (m *MemoryManager) summarize() error {
+func (m *Manager) summarize() error {
 	if len(m.memory.Messages) == 0 {
 		return nil
 	}
@@ -150,7 +152,7 @@ func (m *MemoryManager) summarize() error {
 }
 
 // reflect 生成对话反思
-func (m *MemoryManager) reflect() error {
+func (m *Manager) reflect() error {
 	if len(m.memory.Messages) == 0 {
 		return nil
 	}
@@ -169,12 +171,12 @@ func (m *MemoryManager) reflect() error {
 }
 
 // GetContextMessages 获取用于发送给LLM的上下文消息
-func (m *MemoryManager) GetContextMessages() []Message {
-	messages := []Message{}
+func (m *Manager) GetContextMessages() []types.Message {
+	messages := []types.Message{}
 
 	// 如果有摘要，将其作为系统消息添加
 	if m.memory.Summary != "" {
-		messages = append(messages, Message{
+		messages = append(messages, types.Message{
 			Role:    "system",
 			Content: "以下是之前对话的摘要：\n" + m.memory.Summary,
 		})
@@ -189,7 +191,7 @@ func (m *MemoryManager) GetContextMessages() []Message {
 			}
 		}
 		if importantReflections != "" {
-			messages = append(messages, Message{
+			messages = append(messages, types.Message{
 				Role:    "system",
 				Content: "重要反思和观察：\n" + importantReflections,
 			})
@@ -203,6 +205,6 @@ func (m *MemoryManager) GetContextMessages() []Message {
 }
 
 // GetMemory 获取完整的记忆信息
-func (m *MemoryManager) GetMemory() *ConversationMemory {
+func (m *Manager) GetMemory() *types.ConversationMemory {
 	return m.memory
 }
