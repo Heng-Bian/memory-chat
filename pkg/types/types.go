@@ -1,4 +1,4 @@
-package main
+package types
 
 import "time"
 
@@ -32,10 +32,32 @@ type LLMRequest struct {
 	MaxTokens int      `json:"max_tokens,omitempty"`
 }
 
+// LLMStreamRequest 表示流式请求
+type LLMStreamRequest struct {
+	Model    string    `json:"model"`
+	Messages []Message `json:"messages"`
+	MaxTokens int      `json:"max_tokens,omitempty"`
+	Stream   bool      `json:"stream"`
+}
+
 // LLMResponse 表示LLM返回的响应
 type LLMResponse struct {
 	Choices []struct {
 		Message Message `json:"message"`
+	} `json:"choices"`
+	Usage struct {
+		TotalTokens int `json:"total_tokens"`
+	} `json:"usage"`
+}
+
+// LLMStreamResponse 表示流式响应
+type LLMStreamResponse struct {
+	Choices []struct {
+		Delta struct {
+			Content string `json:"content"`
+			Role    string `json:"role"`
+		} `json:"delta"`
+		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
 	Usage struct {
 		TotalTokens int `json:"total_tokens"`

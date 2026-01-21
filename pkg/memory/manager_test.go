@@ -1,34 +1,43 @@
-package main
+package memory
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/Heng-Bian/memory-chat/pkg/types"
 )
 
 // MockLLMClient 模拟LLM客户端用于测试
 type MockLLMClient struct {
-	chatResponse       string
-	summarizeResponse  string
-	reflectionResponse string
+	chatResponse         string
+	summarizeResponse    string
+	reflectionResponse   string
 	reflectionImportance int
 }
 
-func (m *MockLLMClient) Chat(messages []Message) (*Message, int, error) {
-	return &Message{
+func (m *MockLLMClient) Chat(messages []types.Message) (*types.Message, int, error) {
+	return &types.Message{
 		Role:      "assistant",
 		Content:   m.chatResponse,
 		Timestamp: time.Now(),
 	}, 100, nil
 }
 
-func (m *MockLLMClient) Summarize(messages []Message) (string, error) {
+func (m *MockLLMClient) ChatStream(messages []types.Message, streamFunc func(string) error) (int, error) {
+	if err := streamFunc(m.chatResponse); err != nil {
+		return 0, err
+	}
+	return 100, nil
+}
+
+func (m *MockLLMClient) Summarize(messages []types.Message) (string, error) {
 	return m.summarizeResponse, nil
 }
 
-func (m *MockLLMClient) GenerateReflection(messages []Message, summary string) (*Reflection, error) {
-	return &Reflection{
+func (m *MockLLMClient) GenerateReflection(messages []types.Message, summary string) (*types.Reflection, error) {
+	return &types.Reflection{
 		Content:    m.reflectionResponse,
 		Timestamp:  time.Now(),
 		Importance: m.reflectionImportance,
@@ -40,13 +49,13 @@ func TestMemoryManager_AddMessage(t *testing.T) {
 	storePath := filepath.Join(tmpDir, "test_user.yaml")
 
 	mockClient := &MockLLMClient{
-		chatResponse: "Test response",
-		summarizeResponse: "Test summary",
+		chatResponse:       "Test response",
+		summarizeResponse:  "Test summary",
 		reflectionResponse: "Test reflection",
 		reflectionImportance: 5,
 	}
 
-	mm := NewMemoryManager("test_user", mockClient, storePath)
+	mm := NewManager("test_user", mockClient, storePath)
 
 	// 添加消息
 	err := mm.AddMessage("user", "Hello")
@@ -73,7 +82,7 @@ func TestMemoryManager_SaveAndLoad(t *testing.T) {
 	}
 
 	// 创建并保存记忆
-	mm1 := NewMemoryManager("test_user", mockClient, storePath)
+	mm1 := NewManager("test_user", mockClient, storePath)
 	mm1.AddMessage("user", "Hello")
 	mm1.AddMessage("assistant", "Hi there")
 
@@ -88,7 +97,7 @@ func TestMemoryManager_SaveAndLoad(t *testing.T) {
 	}
 
 	// 加载记忆
-	mm2 := NewMemoryManager("test_user", mockClient, storePath)
+	mm2 := NewManager("test_user", mockClient, storePath)
 	err = mm2.Load()
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)
@@ -108,7 +117,7 @@ func TestMemoryManager_GetContextMessages(t *testing.T) {
 	storePath := filepath.Join(tmpDir, "test_user.yaml")
 
 	mockClient := &MockLLMClient{}
-	mm := NewMemoryManager("test_user", mockClient, storePath)
+	mm := NewManager("test_user", mockClient, storePath)
 
 	// 添加一些消息
 	mm.AddMessage("user", "Message 1")
@@ -142,7 +151,7 @@ func TestMemoryManager_Summarize(t *testing.T) {
 		summarizeResponse: "Summarized content",
 	}
 
-	mm := NewMemoryManager("test_user", mockClient, storePath)
+	mm := NewManager("test_user", mockClient, storePath)
 
 	// 添加足够多的消息以触发摘要
 	for i := 0; i < 10; i++ {
@@ -176,7 +185,7 @@ func TestMemoryManager_Reflection(t *testing.T) {
 		reflectionImportance: 8,
 	}
 
-	mm := NewMemoryManager("test_user", mockClient, storePath)
+	mm := NewManager("test_user", mockClient, storePath)
 
 	// 添加一些消息
 	mm.AddMessage("user", "Test message 1")
@@ -208,17 +217,17 @@ func TestMemoryManager_HighImportanceReflections(t *testing.T) {
 	storePath := filepath.Join(tmpDir, "test_user.yaml")
 
 	mockClient := &MockLLMClient{}
-	mm := NewMemoryManager("test_user", mockClient, storePath)
+	mm := NewManager("test_user", mockClient, storePath)
 
 	// 添加低重要性反思
-	mm.memory.Reflections = append(mm.memory.Reflections, Reflection{
+	mm.memory.Reflections = append(mm.memory.Reflections, types.Reflection{
 		Content:    "Low importance reflection",
 		Importance: 5,
 		Timestamp:  time.Now(),
 	})
 
 	// 添加高重要性反思
-	mm.memory.Reflections = append(mm.memory.Reflections, Reflection{
+	mm.memory.Reflections = append(mm.memory.Reflections, types.Reflection{
 		Content:    "High importance reflection",
 		Importance: 8,
 		Timestamp:  time.Now(),
