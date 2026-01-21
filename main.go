@@ -173,17 +173,24 @@ func runCLI(llmClient *llm.OpenAIClient, model string) {
 		contextMessages := memoryManager.GetContextMessages()
 
 		fmt.Print("🤖 助手: ")
-		response, tokens, err := llmClient.Chat(contextMessages)
+		
+		// 使用流式响应
+		var fullResponse strings.Builder
+		tokens, err := llmClient.ChatStream(contextMessages, func(chunk string) error {
+			fmt.Print(chunk)
+			fullResponse.WriteString(chunk)
+			return nil
+		})
 		if err != nil {
 			fmt.Printf("❌ 错误: %v\n", err)
 			continue
 		}
 
-		fmt.Println(response.Content)
+		fmt.Println()
 		fmt.Printf("   (使用 %d tokens)\n", tokens)
 
 		// 添加助手响应到记忆
-		if err := memoryManager.AddMessage("assistant", response.Content); err != nil {
+		if err := memoryManager.AddMessage("assistant", fullResponse.String()); err != nil {
 			fmt.Printf("⚠️  保存响应失败: %v\n", err)
 		}
 

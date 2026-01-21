@@ -170,9 +170,9 @@ func TestMemoryManager_Summarize(t *testing.T) {
 		t.Error("Summary should not be empty after summarization")
 	}
 
-	// 验证消息被压缩
-	if len(mm.memory.Messages) >= initialMsgCount {
-		t.Error("Messages should be compressed after summarization")
+	// 验证所有消息都被保留（不应该删除）
+	if len(mm.memory.Messages) != initialMsgCount {
+		t.Errorf("All messages should be preserved after summarization, expected %d, got %d", initialMsgCount, len(mm.memory.Messages))
 	}
 }
 
