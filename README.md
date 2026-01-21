@@ -33,18 +33,23 @@
 
 ```
 memory-chat/
-├── main.go              # 主程序，CLI 界面
-├── types.go             # 数据类型定义
-├── llm_client.go        # LLM 客户端实现
-├── memory_manager.go    # 记忆管理器
-├── go.mod               # Go 模块定义
-└── memories/            # 记忆存储目录
-    └── {user_id}.yaml   # 用户记忆文件
+├── main.go              # 主程序入口（CLI & HTTP Server）
+├── pkg/                 # 包目录
+│   ├── types/          # 数据类型定义
+│   ├── llm/            # LLM 客户端（支持流式）
+│   ├── memory/         # 记忆管理器
+│   └── server/         # HTTP 服务器（OpenAI兼容）
+├── examples/            # 示例文件
+├── memories/            # 记忆存储目录
+│   └── {user_id}.yaml  # 用户记忆文件
+├── go.mod              # Go 模块定义
+├── API.md              # HTTP API 文档
+└── README.md           # 项目说明
 ```
 
-## 快速开始
+## 运行模式
 
-### 安装
+### CLI 模式（默认）
 
 ```bash
 # 克隆仓库
@@ -75,9 +80,27 @@ export USER_ID="alice"
 
 ### 运行
 
+#### CLI 模式（交互式命令行）
+
 ```bash
+# 默认运行 CLI 模式
 go run .
+# 或
+./memory-chat -mode=cli
 ```
+
+#### HTTP Server 模式
+
+```bash
+# 启动 HTTP 服务器
+./memory-chat -mode=server -addr=:8080
+```
+
+详细的 HTTP API 使用方法请参考 [API.md](API.md)。
+
+## 使用示例
+
+### CLI 模式交互
 
 或编译后运行：
 
